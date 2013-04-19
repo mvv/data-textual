@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Parsers for numbers written in positional numeral systems.
 module Data.Textual.Numerals
@@ -986,25 +987,15 @@ npcBounded s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
 -- | Parse a non-positive two\'s complement binary number written in
 --   the specified positional numeral system.
 npBits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ α
-npBits s = skipZeroes <?> systemName s ++ " digits"
-  where skipZeroes  = optional zero >>= \case
-                        Just _  → skipZeroes1
-                        Nothing → do
-                          r ← digit
-                          go $ fromIntegral $ negate (r ∷ Int)
-        skipZeroes1 = optional zero >>= \case
-                        Just _  → skipZeroes1
-                        Nothing → optional digit >>= \case
-                          Just r  → go $ fromIntegral $ negate r
-                          Nothing → return 0
-        go !r       = optional digit >>= \case
-                        Just d1 → go ((r `shiftL` digitBits) .|. d)
-                          where !d = fromIntegral $ negate d1 .&. digitMask 
-                        Nothing → return r
-        digitBits   = digitBitsIn s
-        digitMask   = digitMaskIn s
-        zero        = PC.char $! intToDigitIn s 0
-        digit       = digitIn s
+npBits s = (<?> systemName s ++ " digits") $ do
+             r ← digit
+             go $ fromIntegral $ negate (r ∷ Int)
+  where go !r     = optional digit >>= \case
+                      Just d1 → go ((r `shiftL` digitBits) + d)
+                        where !d = fromIntegral $ negate d1
+                      Nothing → return r
+        digitBits = digitBitsIn s
+        digit     = digitIn s
 {-# SPECIALIZE npBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
 {-# SPECIALIZE npBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int8 #-}
 {-# SPECIALIZE npBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int16 #-}
@@ -1066,31 +1057,18 @@ npBits s = skipZeroes <?> systemName s ++ " digits"
 npBitsUpTo ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
            ⇒ s → Int → μ α
 npBitsUpTo _ n | n <= 0 = empty
-npBitsUpTo s n = skipZeroes <?> systemName s ++ " digits"
-  where skipZeroes  = optional zero >>= \case
-                        Just _  → skipZeroes1 (n - 1)
-                        Nothing → do
-                          r ← digit
-                          go (n - 1) $ fromIntegral $ negate (r ∷ Int)
-        skipZeroes1 0 = optional (PC.satisfy $ isDigitIn s) >>= \case
-                          Just _  → moreThan n
-                          Nothing → return 0
-        skipZeroes1 l = optional zero >>= \case
-                          Just _  → skipZeroes1 (l - 1)
-                          Nothing → optional digit >>= \case
-                            Just r  → go (l - 1) $ fromIntegral $ negate r
-                            Nothing → return 0
-        go 0 !r     = optional (PC.satisfy $ isDigitIn s) >>= \case
-                        Just _  → moreThan n
-                        Nothing → return r
-        go l !r     = optional digit >>= \case
-                        Just d1 → go (l - 1) ((r `shiftL` digitBits) .|. d)
-                          where !d = fromIntegral $ negate d1 .&. digitMask 
-                        Nothing → return r
-        digitBits   = digitBitsIn s
-        digitMask   = digitMaskIn s
-        zero        = PC.char $! intToDigitIn s 0
-        digit       = digitIn s
+npBitsUpTo s n = (<?> systemName s ++ " digits") $ do
+                   r ← digit
+                   go (n - 1) $ fromIntegral $ negate (r ∷ Int)
+  where go 0 !r   = optional (PC.satisfy $ isDigitIn s) >>= \case
+                      Just _  → moreThan n
+                      Nothing → return r
+        go l !r   = optional digit >>= \case
+                      Just d1 → go (l - 1) ((r `shiftL` digitBits) + d)
+                        where !d = fromIntegral $ negate d1
+                      Nothing → return r
+        digitBits = digitBitsIn s
+        digit     = digitIn s
 {-# SPECIALIZE npBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int #-}
 {-# SPECIALIZE npBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int8 #-}
 {-# SPECIALIZE npBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int16 #-}
@@ -1156,11 +1134,10 @@ npcBits s = (<?> systemName s ++ " digits") $ digit >>= \case
                     Nothing → return 0
               r → go $ fromIntegral $ negate (r ∷ Int)
   where go !r     = optional digit >>= \case
-                      Just d1 → go ((r `shiftL` digitBits) .|. d)
-                        where !d = fromIntegral $ negate d1 .&. digitMask 
+                      Just d1 → go ((r `shiftL` digitBits) + d)
+                        where !d = fromIntegral $ negate d1
                       Nothing → return r
         digitBits = digitBitsIn s
-        digitMask = digitMaskIn s
         digit     = digitIn s
 {-# SPECIALIZE npcBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
 {-# SPECIALIZE npcBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int8 #-}
@@ -1233,11 +1210,10 @@ npcBitsUpTo s n = (<?> systemName s ++ " digits") $ digit >>= \case
                       Just _  → moreThan n
                       Nothing → return r
         go l !r   = optional digit >>= \case
-                      Just d1 → go (l - 1) ((r `shiftL` digitBits) .|. d)
-                        where !d = fromIntegral $ negate d1 .&. digitMask 
+                      Just d1 → go (l - 1) ((r `shiftL` digitBits) + d)
+                        where !d = fromIntegral $ negate d1
                       Nothing → return r
         digitBits = digitBitsIn s
-        digitMask = digitMaskIn s
         digit     = digitIn s
 {-# SPECIALIZE npcBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int #-}
 {-# SPECIALIZE npcBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int8 #-}
@@ -1297,33 +1273,24 @@ npcBitsUpTo s n = (<?> systemName s ++ " digits") $ digit >>= \case
 
 -- | Parse a non-positive two\'s complement binary number written in
 --   the specified positional numeral system, failing on overflow.
-npbBits ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
+npbBits ∷ ∀ s μ α
+        . (BitSystem s, Ord α, Bounded α, Num α, Bits α,
            Monad μ, CharParsing μ)
         ⇒ s → μ α
-npbBits s = skipZeroes <?> systemName s ++ " digits"
+npbBits s = (<?> systemName s ++ " digits") $ do
+              n ← digit
+              go $ fromIntegral $ negate (n ∷ Int)
   where q1 = minBound `shiftR` digitBits
-        r  = minBound .&. digitMaskIn s
+        r  = negate (lastDigitIn s (minBound ∷ α)) .&. digitMaskIn s
         q  = if r == 0 then q1 else q1 + 1
-        skipZeroes  = optional zero >>= \case
-                        Just _  → skipZeroes1
-                        Nothing → do
-                          n ← digit
-                          go $ fromIntegral $ negate (n ∷ Int)
-        skipZeroes1 = optional zero >>= \case
-                        Just _  → skipZeroes1
-                        Nothing → optional digit >>= \case
-                          Just n  → go $ fromIntegral $ negate n
-                          Nothing → return 0
-        go !n       = optional digit >>= \case
-                        Just d1 → if n > q || (n == q && d >= r)
-                                  then go ((n `shiftL` digitBits) .|. d)
-                                  else fail "out of bounds"
-                          where !d = fromIntegral $ negate d1 .&. digitMask 
-                        Nothing → return n
-        digitBits   = digitBitsIn s
-        digitMask   = digitMaskIn s
-        zero        = PC.char $! intToDigitIn s 0
-        digit       = digitIn s
+        go !n     = optional digit >>= \case
+                      Just d1 → if n > q || (n == q && d1 <= r)
+                                then go ((n `shiftL` digitBits) + d)
+                                else fail "out of bounds"
+                        where !d = fromIntegral $ negate d1
+                      Nothing → return n
+        digitBits = digitBitsIn s
+        digit     = digitIn s
 {-# SPECIALIZE npbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
 {-# SPECIALIZE npbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int8 #-}
 {-# SPECIALIZE npbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int16 #-}
@@ -1383,7 +1350,8 @@ npbBits s = skipZeroes <?> systemName s ++ " digits"
 -- | Parse a non-positive two\'s complement binary number written in
 --   the specified positional numeral system, failing on overflow.
 --   Leading zeroes are not allowed.
-npcbBits ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
+npcbBits ∷ ∀ s μ α
+         . (BitSystem s, Ord α, Bounded α, Num α, Bits α,
             Monad μ, CharParsing μ)
         ⇒ s → μ α
 npcbBits s = (<?> systemName s ++ " digits") $ digit >>= \case
@@ -1392,17 +1360,16 @@ npcbBits s = (<?> systemName s ++ " digits") $ digit >>= \case
                      Nothing → return 0
                n → go $ fromIntegral $ negate (n ∷ Int)
   where q1 = minBound `shiftR` digitBits
-        r  = minBound .&. digitMaskIn s
+        r  = negate (lastDigitIn s (minBound ∷ α)) .&. digitMaskIn s
         q  = if r == 0 then q1 else q1 + 1
-        go !n       = optional digit >>= \case
-                        Just d1 → if n > q || (n == q && d >= r)
-                                  then go ((n `shiftL` digitBits) .|. d)
-                                  else fail "out of bounds"
-                          where !d = fromIntegral $ negate d1 .&. digitMask 
-                        Nothing → return n
-        digitBits   = digitBitsIn s
-        digitMask   = digitMaskIn s
-        digit       = digitIn s
+        go !n     = optional digit >>= \case
+                      Just d1 → if n > q || (n == q && d1 <= r)
+                                then go ((n `shiftL` digitBits) + d)
+                                else fail "out of bounds"
+                        where !d = fromIntegral $ negate d1
+                      Nothing → return n
+        digitBits = digitBitsIn s
+        digit     = digitIn s
 {-# SPECIALIZE npcbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
 {-# SPECIALIZE npcbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int8 #-}
 {-# SPECIALIZE npcbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int16 #-}

@@ -44,6 +44,8 @@ module Data.Textual
   , aDouble
   -- ** Built-in parser
   , Parsed(..)
+  , isParsed
+  , isMalformed
   , maybeParsed
   , builtInParser
   , parseString
@@ -358,6 +360,16 @@ instance Alternative Parsed where
   p@(Parsed _) <|> _ = p
   _            <|> p = p
   {-# INLINABLE (<|>) #-}
+
+-- | Map 'Parsed' to 'True' and 'Malformed' to 'False'.
+isParsed ∷ Parsed α → Bool
+isParsed (Parsed _) = True
+isParsed _          = False
+
+-- | Map 'Parsed' to 'False' and 'Malformed' to 'True'.
+isMalformed ∷ Parsed α → Bool
+isMalformed (Malformed _ _) = True
+isMalformed _               = False
 
 -- | Map 'Parsed' values to 'Just' and 'Malformed' to 'Nothing'.
 maybeParsed ∷ Parsed α → Maybe α

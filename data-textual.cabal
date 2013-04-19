@@ -48,6 +48,7 @@ Test-Suite tests
     test-framework-quickcheck2 >= 0.2,
     QuickCheck                 >= 2.4,
     text-printer,
+    tagged,
     parsers,
     data-textual
   Hs-Source-Dirs: tests
