@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
--- | Working with human-friendly (as opposed to the machine/compiler-friendly
+-- | Working with human-friendly (as opposed to the compiler-friendly
 --   'Show' and 'Read') textual representations.
 module Data.Textual
   (
@@ -42,6 +42,10 @@ module Data.Textual
   , aWord64
   , aFloat
   , aDouble
+  , aMaybe
+  , aMaybeOf
+  , aList
+  , aListOf
   -- ** Built-in parser
   , Parsed(..)
   , isParsed
@@ -340,6 +344,22 @@ aFloat = Proxy
 -- | 'Double' proxy value.
 aDouble ∷ Proxy Double
 aDouble = Proxy
+
+-- | 'Maybe' proxy value.
+aMaybe ∷ Proxy Maybe
+aMaybe = Proxy
+
+-- | 'Maybe' /α/ proxy value.
+aMaybeOf ∷ Proxy α → Proxy (Maybe α)
+aMaybeOf _ = Proxy
+
+-- | List proxy value.
+aList ∷ Proxy []
+aList = Proxy
+
+-- | List of /α/ proxy value.
+aListOf ∷ Proxy α → Proxy ([α])
+aListOf _ = Proxy
 
 -- | Parsing result.
 data Parsed α = Parsed α
