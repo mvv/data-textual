@@ -14,6 +14,7 @@ module Data.Textual
   (
   -- * Printing
     Printable(..)
+  , maybePrint
   , toString
   , toText
   , toLazyText
@@ -87,6 +88,7 @@ import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
+import Data.Monoid (mempty)
 import Data.Int
 import Data.Word
 import Data.List (stripPrefix)
@@ -177,6 +179,11 @@ instance Printable Float where
 instance Printable Double where
   print = TP.string7 . show
   {-# INLINE print #-}
+
+-- | A shorthand for @'maybe' 'mempty' 'print'@.
+maybePrint ∷ (TP.Printer p, Printable α) ⇒ Maybe α → p
+maybePrint = maybe mempty print
+{-# INLINE maybePrint #-}
 
 -- | A shorthand for @'TP.buildString' . 'print'@.
 toString ∷ Printable α ⇒ α → String
