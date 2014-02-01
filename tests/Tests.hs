@@ -7,16 +7,21 @@ import Test.Framework (defaultMain)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck ((==>))
 
+import Prelude hiding (print)
 import Data.Word (Word)
+import Data.Fixed (Pico)
 import Data.Proxy (Proxy)
-import Data.Textual
-import Data.Textual.Numerals
 import Control.Applicative
 import Text.Printer (StringBuilder)
 import qualified Text.Printer as TP
-import qualified Text.Printer.Numerals as TP
+import qualified Text.Printer.Integral as TP
+import qualified Text.Printer.Fractional as TP
 import Text.Parser.Combinators as PC
 import Text.Parser.Char (CharParsing)
+
+import Data.Textual
+import Data.Textual.Integral
+import Data.Textual.Fractional
 
 main = defaultMain
   [ testProperty "nonNegative Binary Int" $ \i →
@@ -277,6 +282,16 @@ main = defaultMain
       isMalformed $ parseAs anInt (cbBits Octal) "01"
   , testProperty "cbBits Octal fails on \"-01\"" $
       isMalformed $ parseAs anInt (cbBits Octal) "-01"
+  , testProperty "fraction" $ \i → 
+      parse fraction (TP.fraction i) == Parsed (i ∷ Rational)
+  , testProperty "fractional (Pico)" $ \i → 
+      parse fractional (print i) == Parsed (i ∷ Pico)
+  , testProperty "fractional (Float)" $ \i → 
+      (not (isInfinite i) && not (isNaN i)) ==>
+        parse fractional (print i) == Parsed (i ∷ Float)
+  , testProperty "fractional (Double)" $ \i → 
+      (not (isInfinite i) && not (isNaN i)) ==>
+        parse fractional (print i) == Parsed (i ∷ Double)
   ]
 
 parse ∷ (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → StringBuilder → Parsed α

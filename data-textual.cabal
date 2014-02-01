@@ -31,13 +31,14 @@ Library
     text,
     tagged >= 0.2,
     text-latin1 >= 0.2,
-    text-printer >= 0.3,
+    text-printer >= 0.4,
     parsers >= 0.5
   Hs-Source-Dirs: src
   GHC-Options: -Wall
   Exposed-Modules:
     Data.Textual
-    Data.Textual.Numerals
+    Data.Textual.Integral
+    Data.Textual.Fractional
 
 Test-Suite tests
   Default-Language: Haskell2010

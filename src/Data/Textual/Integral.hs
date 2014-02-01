@@ -4,8 +4,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
--- | Parsers for numbers written in positional numeral systems.
-module Data.Textual.Numerals
+-- | Parsers for integral numbers written in positional numeral systems.
+module Data.Textual.Integral
   (
   -- * Positional numeral systems
     PositionalSystem(..)
@@ -57,6 +57,7 @@ module Data.Textual.Numerals
   , npbBits
   , npcbBits
   , Sign(..)
+  , applySign
   , optMinus
   , optSign
   , number'
@@ -90,7 +91,7 @@ import Data.Int
 import Data.Word
 import Data.Bits (Bits(..))
 import Control.Applicative
-import Text.Printer.Numerals (
+import Text.Printer.Integral (
          PositionalSystem(..), BitSystem(..),
          Binary(..), Octal(..), Decimal(..), Hexadecimal(..),
          LowHex(..), UpHex(..))
@@ -1429,6 +1430,12 @@ npcbBits s = (<?> systemName s ++ " digits") $ digit >>= \case
 -- | Sign of a number.
 data Sign = NonNegative | NonPositive
             deriving (Typeable, Eq, Show, Read)
+
+-- | Negate the supplied value if the sign is 'NonPositive' and return it
+--   as it is otherwise.
+applySign ∷ Num α ⇒ Sign → α → α
+applySign NonNegative a = a
+applySign NonPositive a = negate a
 
 -- | Optional minus sign.
 optMinus ∷ CharParsing μ ⇒ μ Sign

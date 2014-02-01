@@ -41,6 +41,18 @@ module Data.Textual
   , aWord16
   , aWord32
   , aWord64
+  , aRatio
+  , aRatioOf
+  , aRational
+  , aFixed
+  , aFixedOf
+  , aUni
+  , aDeci
+  , aCenti
+  , aMilli
+  , aMicro
+  , aNano
+  , aPico
   , aFloat
   , aDouble
   , aMaybe
@@ -91,6 +103,9 @@ import Data.Traversable (Traversable)
 import Data.Monoid (mempty)
 import Data.Int
 import Data.Word
+import Data.Ratio (Ratio)
+import Data.Fixed (Fixed, HasResolution,
+                   Uni, Centi, Deci, Milli, Micro, Nano, Pico)
 import Data.List (stripPrefix)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
@@ -99,10 +114,12 @@ import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Data.Text as TS
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Encoding (decodeUtf8)
-import Data.Textual.Numerals
+import Data.Textual.Integral
+import Data.Textual.Fractional
 import Control.Applicative
 import qualified Text.Printer as TP
-import qualified Text.Printer.Numerals as TP
+import qualified Text.Printer.Integral as TP
+import qualified Text.Printer.Fractional as TP
 import Text.Parser.Combinators (Parsing, (<?>))
 import qualified Text.Parser.Combinators as PC
 import Text.Parser.Char (CharParsing)
@@ -170,6 +187,14 @@ instance Printable Word32 where
 
 instance Printable Word64 where
   print = TP.nnDecimal
+  {-# INLINE print #-}
+
+instance Integral α ⇒ Printable (Ratio α) where
+  print = TP.fraction
+  {-# INLINE print #-}
+
+instance HasResolution α ⇒ Printable (Fixed α) where
+  print = TP.string7 . show
   {-# INLINE print #-}
 
 instance Printable Float where
@@ -275,6 +300,14 @@ instance Textual Word64 where
   textual = nnBounded Decimal
   {-# INLINE textual #-}
 
+instance Integral α ⇒ Textual (Ratio α) where
+  textual = fraction
+  {-# INLINE textual #-}
+
+instance HasResolution α ⇒ Textual (Fixed α) where
+  textual = fractional
+  {-# INLINE textual #-}
+
 -- | Hint the type system about the type of the first argument.
 hintType ∷ α → Proxy α → α
 hintType a _ = a
@@ -343,6 +376,54 @@ aWord32 = Proxy
 -- | 'Word64' proxy value.
 aWord64 ∷ Proxy Word64
 aWord64 = Proxy
+
+-- | 'Ratio' proxy value.
+aRatio ∷ Proxy Ratio
+aRatio = Proxy
+
+-- | 'Ratio' /α/ proxy value.
+aRatioOf ∷ Proxy α → Proxy (Ratio α)
+aRatioOf _ = Proxy
+
+-- | 'Rational' proxy value.
+aRational ∷ Proxy Rational
+aRational = Proxy
+
+-- | 'Fixed' proxy value.
+aFixed ∷ Proxy Fixed
+aFixed = Proxy
+
+-- | 'Fixed' /α/ proxy value.
+aFixedOf ∷ Proxy α → Proxy (Fixed α)
+aFixedOf _ = Proxy
+
+-- | 'Uni' proxy value.
+aUni ∷ Proxy Uni
+aUni = Proxy
+
+-- | 'Deci' proxy value.
+aDeci ∷ Proxy Deci
+aDeci = Proxy
+
+-- | 'Centi' proxy value.
+aCenti ∷ Proxy Centi
+aCenti = Proxy
+
+-- | 'Milli' proxy value.
+aMilli ∷ Proxy Milli
+aMilli = Proxy
+
+-- | 'Micro' proxy value.
+aMicro ∷ Proxy Micro
+aMicro = Proxy
+
+-- | 'Nano' proxy value.
+aNano ∷ Proxy Nano
+aNano = Proxy
+
+-- | 'Pico' proxy value.
+aPico ∷ Proxy Pico
+aPico = Proxy
 
 -- | 'Float' proxy value.
 aFloat ∷ Proxy Float
