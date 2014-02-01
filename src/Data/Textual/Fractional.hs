@@ -14,6 +14,11 @@ module Data.Textual.Fractional
   , Hexadecimal(..)
   , UpHex(..)
   , LowHex(..)
+  -- * Sign
+  , Sign(..)
+  , applySign
+  , optMinus
+  , optSign
   -- * Optionality characteristic
   , Optional(..)
   , isOptional
