@@ -84,6 +84,7 @@ hexExpSign = optional (PC.oneOf "pP") >>= \case
                Nothing → return Nothing
                Just _  → Just <$> optSign
 
+-- | /s/-fraction parser.
 fractional' ∷ (PositionalSystem s, Fractional α, Monad μ, CharParsing μ)
             ⇒ μ Sign -- ^ Sign parser.
             → s
