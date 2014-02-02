@@ -30,7 +30,7 @@ Library
     bytestring >= 0.10,
     text,
     tagged >= 0.2,
-    text-latin1 >= 0.2,
+    text-latin1 >= 0.3,
     text-printer >= 0.4,
     parsers >= 0.5
   Hs-Source-Dirs: src
