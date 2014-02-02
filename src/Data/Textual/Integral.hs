@@ -1460,7 +1460,7 @@ number' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → nonPositive s
 {-# INLINE number' #-}
 
--- | A shorthand for 'number\'' 'optMinus'.
+-- | A shorthand for 'number'' 'optMinus'.
 number ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → μ α
 number = number' optMinus
 {-# INLINE number #-}
@@ -1475,7 +1475,7 @@ compact' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npCompact s
 {-# INLINE compact' #-}
 
--- | A shorthand for 'compact\'' 'optMinus'.
+-- | A shorthand for 'compact'' 'optMinus'.
 compact ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → μ α
 compact = compact' optMinus
 {-# INLINE compact #-}
@@ -1490,7 +1490,7 @@ numberUpTo' neg s n = (<?> systemName s) $ neg >>= \case
   NonPositive → npUpTo s n
 {-# INLINE numberUpTo' #-}
 
--- | A shorthand for 'numberUpTo\'' 'optMinus'.
+-- | A shorthand for 'numberUpTo'' 'optMinus'.
 numberUpTo ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ)
            ⇒ s → Int → μ α
 numberUpTo = numberUpTo' optMinus
@@ -1506,7 +1506,7 @@ compactUpTo' neg s n = (<?> systemName s) $ neg >>= \case
   NonPositive → npcUpTo s n
 {-# INLINE compactUpTo' #-}
 
--- | A shorthand for 'compactUpTo\'' 'optMinus'.
+-- | A shorthand for 'compactUpTo'' 'optMinus'.
 compactUpTo ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ)
            ⇒ s → Int → μ α
 compactUpTo = compactUpTo' optMinus
@@ -1523,7 +1523,7 @@ bounded' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npBounded s
 {-# INLINE bounded' #-}
 
--- | A shorthand for 'bounded\'' 'optMinus'.
+-- | A shorthand for 'bounded'' 'optMinus'.
 bounded ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
            Monad μ, CharParsing μ) ⇒ s → μ α
 bounded = bounded' optMinus
@@ -1540,7 +1540,7 @@ cBounded' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npcBounded s
 {-# INLINE cBounded' #-}
 
--- | A shorthand for 'cBounded\'' 'optMinus'.
+-- | A shorthand for 'cBounded'' 'optMinus'.
 cBounded ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
             Monad μ, CharParsing μ) ⇒ s → μ α
 cBounded = cBounded' optMinus
@@ -1556,7 +1556,7 @@ bits' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npBits s
 {-# INLINE bits' #-}
 
--- | A shorthand for 'bits\'' 'optMinus'.
+-- | A shorthand for 'bits'' 'optMinus'.
 bits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ α
 bits = bits' optMinus
 {-# INLINE bits #-}
@@ -1571,7 +1571,7 @@ cBits' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npcBits s
 {-# INLINE cBits' #-}
 
--- | A shorthand for 'cBits\'' 'optMinus'.
+-- | A shorthand for 'cBits'' 'optMinus'.
 cBits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ α
 cBits = cBits' optMinus
 {-# INLINE cBits #-}
@@ -1586,7 +1586,7 @@ bitsUpTo' neg s n = (<?> systemName s) $ neg >>= \case
   NonPositive → npBitsUpTo s n
 {-# INLINE bitsUpTo' #-}
 
--- | A shorthand for 'bitsUpTo\'' 'optMinus'.
+-- | A shorthand for 'bitsUpTo'' 'optMinus'.
 bitsUpTo ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
          ⇒ s → Int → μ α
 bitsUpTo = bitsUpTo' optMinus
@@ -1603,7 +1603,7 @@ cBitsUpTo' neg s n = (<?> systemName s) $ neg >>= \case
   NonPositive → npcBitsUpTo s n
 {-# INLINE cBitsUpTo' #-}
 
--- | A shorthand for 'cBitsUpTo\'' 'optMinus'.
+-- | A shorthand for 'cBitsUpTo'' 'optMinus'.
 cBitsUpTo ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
           ⇒ s → Int → μ α
 cBitsUpTo = cBitsUpTo' optMinus
@@ -1620,7 +1620,7 @@ bBits' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npbBits s
 {-# INLINE bBits' #-}
 
--- | A shorthand for 'bBits\'' 'optMinus'.
+-- | A shorthand for 'bBits'' 'optMinus'.
 bBits ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
          Monad μ, CharParsing μ)
       ⇒ s → μ α
@@ -1639,7 +1639,7 @@ cbBits' neg s = (<?> systemName s) $ neg >>= \case
   NonPositive → npcbBits s
 {-# INLINE cbBits' #-}
 
--- | A shorthand for 'cbBits\'' 'optMinus'.
+-- | A shorthand for 'cbBits'' 'optMinus'.
 cbBits ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
           Monad μ, CharParsing μ)
        ⇒ s → μ α

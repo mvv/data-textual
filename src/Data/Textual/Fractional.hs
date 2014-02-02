@@ -66,7 +66,7 @@ fraction' neg s den = (<?> "fraction") $ do
                   else return d
       return $ fromRational $ n % d
 
--- | A shorthand for 'fraction\'' 'optMinus' 'Decimal' 'optSlash'.
+-- | A shorthand for 'fraction'' 'optMinus' 'Decimal' 'optSlash'.
 fraction ∷ (Fractional α, Monad μ, CharParsing μ) ⇒ μ α
 fraction = fraction' optMinus Decimal optSlash
 
