@@ -1,7 +1,6 @@
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase #-}
 
 -- | Parsers for fractions.
 module Data.Textual.Fractional
@@ -56,7 +55,8 @@ fraction' ∷ (PositionalSystem s, Fractional α, Monad μ, CharParsing μ)
           → μ α
 fraction' neg s den = (<?> "fraction") $ do
   n ← number' neg s <?> "numerator"
-  den >>= \case
+  hasDen ← den
+  case hasDen of
     Optional →
       return $ fromInteger n
     Required → do
@@ -73,16 +73,20 @@ fraction = fraction' optMinus Decimal optSlash
 -- | Start of a decimal exponent. Accepts /'e'/ or /'E'/ followed by
 --   an optional sign. Otherwise 'Nothing' is returned.
 decExpSign ∷ (Monad μ, CharParsing μ) ⇒ μ (Maybe Sign)
-decExpSign = optional (PC.oneOf "eE") >>= \case
-               Nothing → return Nothing
-               Just _  → Just <$> optSign
+decExpSign = do
+  c ← optional (PC.oneOf "eE")
+  case c of
+    Nothing → return Nothing
+    Just _  → Just <$> optSign
 
 -- | Start of a hexadecimal exponent. Accepts /'p'/ or /'P'/ followed by
 --   an optional sign. Otherwise 'Nothing' is returned.
 hexExpSign ∷ (Monad μ, CharParsing μ) ⇒ μ (Maybe Sign)
-hexExpSign = optional (PC.oneOf "pP") >>= \case
-               Nothing → return Nothing
-               Just _  → Just <$> optSign
+hexExpSign = do
+  c ← optional (PC.oneOf "pP")
+  case c of
+    Nothing → return Nothing
+    Just _  → Just <$> optSign
 
 -- | /s/-fraction parser.
 fractional' ∷ (PositionalSystem s, Fractional α, Monad μ, CharParsing μ)
@@ -99,35 +103,39 @@ fractional' neg s ip dot eneg = (<?> (systemName s ++ "-fraction")) $ do
             i ← nonNegative s <?> "integer part"
             ((i, ) . isJust) <$> optional dot
       (i, hasF) ← case ip of
-        Optional → optional dot >>= \case
-          Nothing → integral
-          Just _ → return (0, True)
+        Optional → do mDot ← optional dot
+                      case mDot of
+                        Just _  → return (0, True)
+                        Nothing → integral
         Required → integral
       (f, fDigits) ←
         if hasF
         then do
-          let go !ds !f = optional digit >>= \case
-                            Just d  → go (ds + 1) (f * radix + d)
-                            Nothing → return (f, ds) 
+          let go !ds !f = do mDigit ← optional digit
+                             case mDigit of
+                              Just d  → go (ds + 1) (f * radix + d)
+                              Nothing → return (f, ds) 
           digit >>= go (1 ∷ Int) <?> "fractional part"
         else
           return (0, 0)
       return (i, f, fDigits)
-    (<?> "exponent") $ eneg >>= \case
-      Nothing | f == 0    → return $ fromInteger $ applySign sign i
-              | otherwise → return $ fromRational
-                                   $ applySign sign
-                                   $ fromInteger i + f % radix ^ fDigits
-      Just esign → do
-        e ← nnBounded Decimal
-        return $ applySign sign $ case esign of
-          NonNegative → case e - fDigits of
-            e₁ | e₁ >= 0   → fromInteger $ i * radix ^ e + f * radix ^ e₁
-               | otherwise → fromRational
-                           $ fromInteger (i * radix ^ e)
-                           + i % radix ^ negate e₁
-          NonPositive → fromRational
-                      $ i % (radix ^ e) + f % radix ^ (fDigits + e)
+    (<?> "exponent") $ do
+      hasExp ← eneg
+      case hasExp of
+        Nothing | f == 0    → return $ fromInteger $ applySign sign i
+                | otherwise → return $ fromRational
+                                     $ applySign sign
+                                     $ fromInteger i + f % radix ^ fDigits
+        Just esign → do
+          e ← nnBounded Decimal
+          return $ applySign sign $ case esign of
+            NonNegative → case e - fDigits of
+              e₁ | e₁ >= 0   → fromInteger $ i * radix ^ e + f * radix ^ e₁
+                 | otherwise → fromRational
+                             $ fromInteger (i * radix ^ e)
+                             + i % radix ^ negate e₁
+            NonPositive → fromRational
+                        $ i % (radix ^ e) + f % radix ^ (fDigits + e)
   where 
     radix = radixIn s
     digit = digitIn s

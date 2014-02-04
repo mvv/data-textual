@@ -1,7 +1,6 @@
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Parsers for integral numbers written in positional numeral systems.
@@ -176,9 +175,10 @@ nzUpHexDigit = nzDigitIn UpHex
 --   numeral system.
 nonNegative ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → μ α
 nonNegative s = digit >>= go <?> systemName s ++ " digits"
-  where go !r = optional digit >>= \case
-                  Just d  → go (r * radix + d)
-                  Nothing → return r
+  where go !r = do mDigit ← optional digit
+                   case mDigit of
+                     Just d  → go (r * radix + d)
+                     Nothing → return r
         radix = radixIn s
         digit = digitIn s
 {-# SPECIALIZE nonNegative ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -201,14 +201,18 @@ nonNegative s = digit >>= go <?> systemName s ++ " digits"
 -- | Parse a non-negative number written in the specified positional
 --   numeral system. Leading zeroes are not allowed.
 nnCompact ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → μ α
-nnCompact s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-                0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → PC.unexpected "leading zero"
-                      Nothing → return 0
-                r → go $ fromIntegral (r ∷ Word)
-  where go !r = optional digit >>= \case
-                  Just d  → go (r * radix + d)
-                  Nothing → return r
+nnCompact s = (<?> systemName s ++ " digits") $ do
+                d₀ ← digitIn s
+                case d₀ of
+                  0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                         case mDigit of
+                           Just _  → PC.unexpected "leading zero"
+                           Nothing → return 0
+                  r → go $ fromIntegral (r ∷ Word)
+  where go !r = do mDigit ← optional digit
+                   case mDigit of
+                     Just d  → go (r * radix + d)
+                     Nothing → return r
         radix = radixIn s
         digit = digitIn s
 {-# SPECIALIZE nnCompact ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -241,12 +245,14 @@ moreThan n = PC.unexpected
 nnUpTo ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → Int → μ α
 nnUpTo _ n | n <= 0 = empty
 nnUpTo s n = digit >>= go (n - 1) <?> systemName s ++ " digits"
-  where go 0 !r = optional (PC.satisfy $ isDigitIn s) >>= \case
-                    Just _  → moreThan n
-                    Nothing → return r
-        go l !r = optional digit >>= \case
-                    Just d  → go (l - 1) (r * radix + d)
-                    Nothing → return r
+  where go 0 !r = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                     case mDigit of
+                       Just _  → moreThan n
+                       Nothing → return r
+        go l !r = do mDigit ← optional digit
+                     case mDigit of
+                       Just d  → go (l - 1) (r * radix + d)
+                       Nothing → return r
         radix   = radixIn s
         digit   = digitIn s
 {-# SPECIALIZE nnUpTo ∷ (Monad μ, CharParsing μ) ⇒ Decimal → Int → μ Int #-}
@@ -270,17 +276,22 @@ nnUpTo s n = digit >>= go (n - 1) <?> systemName s ++ " digits"
 --   numeral system (up to /n/ digits). Leading zeroes are not allowed.
 nncUpTo ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → Int → μ α
 nncUpTo _ n | n <= 0 = empty
-nncUpTo s n = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-                0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → PC.unexpected "leading zero"
-                      Nothing → return 0
-                r → go (n - 1) $ fromIntegral (r ∷ Word)
-  where go 0 !r = optional (PC.satisfy $ isDigitIn s) >>= \case
-                    Just _  → moreThan n
-                    Nothing → return r
-        go l !r = optional digit >>= \case
-                    Just d  → go (l - 1) (r * radix + d)
-                    Nothing → return r
+nncUpTo s n = (<?> systemName s ++ " digits") $ do
+                d₀ ← digitIn s
+                case d₀ of
+                  0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                         case mDigit of
+                           Just _  → PC.unexpected "leading zero"
+                           Nothing → return 0
+                  r → go (n - 1) $ fromIntegral (r ∷ Word)
+  where go 0 !r = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                     case mDigit of
+                       Just _  → moreThan n
+                       Nothing → return r
+        go l !r = do mDigit ← optional digit
+                     case mDigit of
+                       Just d  → go (l - 1) (r * radix + d)
+                       Nothing → return r
         radix   = radixIn s
         digit   = digitIn s
 {-# SPECIALIZE nncUpTo ∷ (Monad μ, CharParsing μ) ⇒ Decimal → Int → μ Int #-}
@@ -306,11 +317,12 @@ nnBounded ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
              Monad μ, CharParsing μ) ⇒ s → μ α
 nnBounded s = digit >>= go <?> systemName s ++ " digits"
   where (q, r) = quotRem maxBound radix
-        go !n  = optional digit >>= \case
-                   Just n1 → if n < q || (n == q && n1 <= r)
-                             then go (n * radix + n1)
-                             else fail "out of bounds"
-                   Nothing → return n
+        go !n  = do mDigit ← optional digit
+                    case mDigit of
+                      Just d  → if n < q || (n == q && d <= r)
+                                then go (n * radix + d)
+                                else fail "out of bounds"
+                      Nothing → return n
         radix  = radixIn s
         digit  = digitIn s
 {-# SPECIALIZE nnBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -334,17 +346,21 @@ nnBounded s = digit >>= go <?> systemName s ++ " digits"
 --   numeral system, failing on overflow. Leading zeroes are not allowed.
 nncBounded ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
               Monad μ, CharParsing μ) ⇒ s → μ α
-nncBounded s = (<?> systemName s ++ " digits") $ digit >>= \case
-                 0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                       Just _  → PC.unexpected "leading zero"
-                       Nothing → return 0
-                 n → go n
+nncBounded s = (<?> systemName s ++ " digits") $ do
+                 d₀ ← digit
+                 case d₀ of
+                   0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                          case mDigit of
+                            Just _  → PC.unexpected "leading zero"
+                            Nothing → return 0
+                   n → go n
   where (q, r) = quotRem maxBound radix
-        go !n  = optional digit >>= \case
-                   Just d  → if n < q || (n == q && d <= r)
-                             then go (n * radix + d)
-                             else fail "out of bounds"
-                   Nothing → return n
+        go !n  = do mDigit ← optional digit
+                    case mDigit of
+                      Just d  → if n < q || (n == q && d <= r)
+                                then go (n * radix + d)
+                                else fail "out of bounds"
+                      Nothing → return n
         radix  = radixIn s
         digit  = digitIn s
 {-# SPECIALIZE nncBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -368,9 +384,10 @@ nncBounded s = (<?> systemName s ++ " digits") $ digit >>= \case
 --   positional numeral system.
 nnBits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ α
 nnBits s = digit >>= go <?> systemName s ++ " digits"
-  where go !r     = optional digit >>= \case
-                      Just d  → go ((r `shiftL` digitBits) .|. d)
-                      Nothing → return r
+  where go !r     = do mDigit ← optional digit
+                       case mDigit of
+                         Just d  → go ((r `shiftL` digitBits) .|. d)
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE nnBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -432,14 +449,18 @@ nnBits s = digit >>= go <?> systemName s ++ " digits"
 -- | Parse a non-negative binary number written in the specified
 --   positional numeral system. Leading zeroes are not allowed.
 nncBits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ α
-nncBits s = (<?> systemName s ++ " digits") $ digit >>= \case
-              0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                    Just _  → PC.unexpected "leading zero"
-                    Nothing → return 0 
-              r → go r
-  where go !r     = optional digit >>= \case
-                      Just d  → go ((r `shiftL` digitBits) .|. d)
-                      Nothing → return r
+nncBits s = (<?> systemName s ++ " digits") $ do
+              d₀ ← digit
+              case d₀ of
+                0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                       case mDigit of
+                         Just _  → PC.unexpected "leading zero"
+                         Nothing → return 0 
+                r → go r
+  where go !r     = do mDigit ← optional digit
+                       case mDigit of
+                         Just d  → go ((r `shiftL` digitBits) .|. d)
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE nncBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -504,12 +525,14 @@ nnBitsUpTo ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
            ⇒ s → Int → μ α
 nnBitsUpTo _ n | n <= 0 = empty
 nnBitsUpTo s n = digit >>= go (n - 1) <?> systemName s ++ " digits"
-  where go 0 !r   = optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → moreThan n
-                      Nothing → return r
-        go l !r   = optional digit >>= \case
-                      Just d  → go (l - 1) ((r `shiftL` digitBits) .|. d)
-                      Nothing → return r
+  where go 0 !r   = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                       case mDigit of
+                         Just _  → moreThan n
+                         Nothing → return r
+        go l !r   = do mDigit ← optional digit
+                       case mDigit of
+                         Just d  → go (l - 1) ((r `shiftL` digitBits) .|. d)
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE nnBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int #-}
@@ -574,17 +597,22 @@ nnBitsUpTo s n = digit >>= go (n - 1) <?> systemName s ++ " digits"
 nncBitsUpTo ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
             ⇒ s → Int → μ α
 nncBitsUpTo _ n | n <= 0 = empty
-nncBitsUpTo s n = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-                    0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                          Just _  → PC.unexpected "leading zero"
-                          Nothing → return 0 
-                    r → go (n - 1) $ fromIntegral (r ∷ Word)
-  where go 0 !r   = optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → moreThan n
-                      Nothing → return r
-        go l !r   = optional digit >>= \case
-                      Just d  → go (l - 1) ((r `shiftL` digitBits) .|. d)
-                      Nothing → return r
+nncBitsUpTo s n = (<?> systemName s ++ " digits") $ do
+                    d₀ ← digitIn s
+                    case d₀ of
+                      0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                             case mDigit of
+                               Just _  → PC.unexpected "leading zero"
+                               Nothing → return 0 
+                      r → go (n - 1) $ fromIntegral (r ∷ Word)
+  where go 0 !r   = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                       case mDigit of
+                         Just _  → moreThan n
+                         Nothing → return r
+        go l !r   = do mDigit ← optional digit
+                       case mDigit of
+                         Just d  → go (l - 1) ((r `shiftL` digitBits) .|. d)
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE nncBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int #-}
@@ -651,11 +679,12 @@ nnbBits ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
 nnbBits s = digit >>= go <?> systemName s ++ " digits"
   where q = maxBound `shiftR` digitBits
         r = maxBound .&. digitMaskIn s
-        go !n = optional digit >>= \case
-                  Just d  → if n < q || (n == q && d <= r)
-                            then go ((n `shiftL` digitBits) .|. d)
-                            else fail "out of bounds"
-                  Nothing → return n
+        go !n = do mDigit ← optional digit
+                   case mDigit of
+                     Just d  → if n < q || (n == q && d <= r)
+                               then go ((n `shiftL` digitBits) .|. d)
+                               else fail "out of bounds"
+                     Nothing → return n
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE nnbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -720,18 +749,22 @@ nnbBits s = digit >>= go <?> systemName s ++ " digits"
 nncbBits ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
             Monad μ, CharParsing μ)
          ⇒ s → μ α
-nncbBits s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-               0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                     Just _  → PC.unexpected "leading zero"
-                     Nothing → return 0
-               n → go $ fromIntegral (n ∷ Word)
+nncbBits s = (<?> systemName s ++ " digits") $ do
+               d₀ ← digitIn s
+               case d₀ of
+                 0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                        case mDigit of
+                          Just _  → PC.unexpected "leading zero"
+                          Nothing → return 0
+                 n → go $ fromIntegral (n ∷ Word)
   where q = maxBound `shiftR` digitBits
         r = maxBound .&. digitMaskIn s
-        go !n = optional digit >>= \case
-                  Just d  → if n < q || (n == q && d <= r)
-                            then go ((n `shiftL` digitBits) .|. d)
-                            else fail "out of bounds"
-                  Nothing → return n
+        go !n = do mDigit ← optional digit
+                   case mDigit of
+                     Just d  → if n < q || (n == q && d <= r)
+                               then go ((n `shiftL` digitBits) .|. d)
+                               else fail "out of bounds"
+                     Nothing → return n
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE nncbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -797,9 +830,10 @@ nonPositive ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s →
 nonPositive s = (<?> systemName s ++ " digits") $ do
                   r ← digitIn s
                   go $ fromIntegral $ negate (r ∷ Int)
-  where go !r = optional digit >>= \case
-                  Just d  → go (r * radix - d)
-                  Nothing → return r
+  where go !r = do mDigit ← optional digit
+                   case mDigit of
+                     Just d  → go (r * radix - d)
+                     Nothing → return r
         radix = radixIn s
         digit = digitIn s
 {-# SPECIALIZE nonPositive ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -822,14 +856,18 @@ nonPositive s = (<?> systemName s ++ " digits") $ do
 -- | Parse a non-positive number written in the specified positional
 --   numeral system. Leading zeroes are not allowed.
 npCompact ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → μ α
-npCompact s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-                0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → PC.unexpected "leading zero"
-                      Nothing → return 0
-                r → go $ fromIntegral $ negate (r ∷ Int)
-  where go !r = optional digit >>= \case
-                  Just d  → go (r * radix - d)
-                  Nothing → return r
+npCompact s = (<?> systemName s ++ " digits") $ do
+                d₀ ← digitIn s
+                case d₀ of
+                  0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                         case mDigit of
+                           Just _  → PC.unexpected "leading zero"
+                           Nothing → return 0
+                  r → go $ fromIntegral $ negate (r ∷ Int)
+  where go !r = do mDigit ← optional digit
+                   case mDigit of
+                     Just d  → go (r * radix - d)
+                     Nothing → return r
         radix = radixIn s
         digit = digitIn s
 {-# SPECIALIZE npCompact ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -856,12 +894,14 @@ npUpTo _ n | n <= 0 = empty
 npUpTo s n = (<?> systemName s ++ " digits") $ do
                r ← digitIn s
                go (n - 1) $ fromIntegral $ negate (r ∷ Int)
-  where go 0 !r = optional (PC.satisfy $ isDigitIn s) >>= \case
-                    Just _  → moreThan n
-                    Nothing → return r
-        go l !r = optional digit >>= \case
-                    Just d  → go (l - 1) (r * radix - d)
-                    Nothing → return r
+  where go 0 !r = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                     case mDigit of
+                       Just _  → moreThan n
+                       Nothing → return r
+        go l !r = do mDigit ← optional digit
+                     case mDigit of
+                       Just d  → go (l - 1) (r * radix - d)
+                       Nothing → return r
         radix   = radixIn s
         digit   = digitIn s
 {-# SPECIALIZE npUpTo ∷ (Monad μ, CharParsing μ) ⇒ Decimal → Int → μ Int #-}
@@ -885,17 +925,22 @@ npUpTo s n = (<?> systemName s ++ " digits") $ do
 --   numeral system (up to /n/ digits). Leading zeroes are not allowed.
 npcUpTo ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ) ⇒ s → Int → μ α
 npcUpTo _ n | n <= 0 = empty
-npcUpTo s n = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-                0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → PC.unexpected "leading zero"
-                      Nothing → return 0
-                r → go (n - 1) $ fromIntegral $ negate (r ∷ Int)
-  where go 0 !r = optional (PC.satisfy $ isDigitIn s) >>= \case
-                    Just _  → moreThan n
-                    Nothing → return r
-        go l !r = optional digit >>= \case
-                    Just d  → go (l - 1) (r * radix - d)
-                    Nothing → return r
+npcUpTo s n = (<?> systemName s ++ " digits") $ do
+                d₀ ← digitIn s
+                case d₀ of
+                  0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                         case mDigit of
+                           Just _  → PC.unexpected "leading zero"
+                           Nothing → return 0
+                  r → go (n - 1) $ fromIntegral $ negate (r ∷ Int)
+  where go 0 !r = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                     case mDigit of
+                       Just _  → moreThan n
+                       Nothing → return r
+        go l !r = do mDigit ← optional digit
+                     case mDigit of
+                       Just d  → go (l - 1) (r * radix - d)
+                       Nothing → return r
         radix   = radixIn s
         digit   = digitIn s
 {-# SPECIALIZE npcUpTo ∷ (Monad μ, CharParsing μ) ⇒ Decimal → Int → μ Int #-}
@@ -925,11 +970,12 @@ npBounded s = (<?> systemName s ++ " digits") $ do
                 go $ fromIntegral $ negate (n ∷ Int)
   where (q, r1) = quotRem minBound radix
         !r      = negate r1
-        go !n   = optional digit >>= \case
-                    Just d  → if n > q || (n == q && d <= r)
-                              then go (n * radix - d)
-                              else fail "out of bounds"
-                    Nothing → return n
+        go !n   = do mDigit ← optional digit
+                     case mDigit of
+                       Just d  → if n > q || (n == q && d <= r)
+                                 then go (n * radix - d)
+                                 else fail "out of bounds"
+                       Nothing → return n
         radix   = radixIn s
         digit   = digitIn s
 {-# SPECIALIZE npBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -954,18 +1000,22 @@ npBounded s = (<?> systemName s ++ " digits") $ do
 npcBounded ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
               Monad μ, CharParsing μ)
            ⇒ s → μ α
-npcBounded s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
-                 0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                       Just _  → PC.unexpected "leading zero"
-                       Nothing → return 0
-                 n → go $ fromIntegral $ negate (n ∷ Int)
+npcBounded s = (<?> systemName s ++ " digits") $ do
+                 d₀ ← digitIn s
+                 case d₀ of
+                   0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                          case mDigit of
+                            Just _  → PC.unexpected "leading zero"
+                            Nothing → return 0
+                   n → go $ fromIntegral $ negate (n ∷ Int)
   where (q, r1) = quotRem minBound radix
         !r      = negate r1
-        go !n   = optional digit >>= \case
-                    Just d  → if n > q || (n == q && d <= r)
-                              then go (n * radix - d)
-                              else fail "out of bounds"
-                    Nothing → return n
+        go !n   = do mDigit ← optional digit
+                     case mDigit of
+                       Just d  → if n > q || (n == q && d <= r)
+                                 then go (n * radix - d)
+                                 else fail "out of bounds"
+                       Nothing → return n
         radix   = radixIn s
         digit   = digitIn s
 {-# SPECIALIZE npcBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Int #-}
@@ -991,10 +1041,11 @@ npBits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ
 npBits s = (<?> systemName s ++ " digits") $ do
              r ← digit
              go $ fromIntegral $ negate (r ∷ Int)
-  where go !r     = optional digit >>= \case
-                      Just d1 → go ((r `shiftL` digitBits) + d)
-                        where !d = fromIntegral $ negate d1
-                      Nothing → return r
+  where go !r     = do mDigit ← optional digit
+                       case mDigit of
+                         Just d1 → go ((r `shiftL` digitBits) + d)
+                           where !d = fromIntegral $ negate d1
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE npBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -1061,13 +1112,15 @@ npBitsUpTo _ n | n <= 0 = empty
 npBitsUpTo s n = (<?> systemName s ++ " digits") $ do
                    r ← digit
                    go (n - 1) $ fromIntegral $ negate (r ∷ Int)
-  where go 0 !r   = optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → moreThan n
-                      Nothing → return r
-        go l !r   = optional digit >>= \case
-                      Just d1 → go (l - 1) ((r `shiftL` digitBits) + d)
-                        where !d = fromIntegral $ negate d1
-                      Nothing → return r
+  where go 0 !r   = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                       case mDigit of
+                         Just _  → moreThan n
+                         Nothing → return r
+        go l !r   = do mDigit ← optional digit
+                       case mDigit of
+                         Just d1 → go (l - 1) ((r `shiftL` digitBits) + d)
+                           where !d = fromIntegral $ negate d1
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE npBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int #-}
@@ -1129,15 +1182,19 @@ npBitsUpTo s n = (<?> systemName s ++ " digits") $ do
 -- | Parse a non-positive two\'s complement binary number written in
 --   the specified positional numeral system. Leading zeroes are not allowed.
 npcBits ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ) ⇒ s → μ α
-npcBits s = (<?> systemName s ++ " digits") $ digit >>= \case
-              0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                    Just _  → PC.unexpected "leading zero"
-                    Nothing → return 0
-              r → go $ fromIntegral $ negate (r ∷ Int)
-  where go !r     = optional digit >>= \case
-                      Just d1 → go ((r `shiftL` digitBits) + d)
-                        where !d = fromIntegral $ negate d1
-                      Nothing → return r
+npcBits s = (<?> systemName s ++ " digits") $ do
+              d₀ ← digit
+              case d₀ of
+                0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                       case mDigit of
+                         Just _  → PC.unexpected "leading zero"
+                         Nothing → return 0
+                r → go $ fromIntegral $ negate (r ∷ Int)
+  where go !r     = do mDigit ← optional digit
+                       case mDigit of
+                         Just d1 → go ((r `shiftL` digitBits) + d)
+                           where !d = fromIntegral $ negate d1
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE npcBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -1202,18 +1259,23 @@ npcBits s = (<?> systemName s ++ " digits") $ digit >>= \case
 npcBitsUpTo ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
             ⇒ s → Int → μ α
 npcBitsUpTo _ n | n <= 0 = empty
-npcBitsUpTo s n = (<?> systemName s ++ " digits") $ digit >>= \case
-                    0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                          Just _  → PC.unexpected "leading zero"
-                          Nothing → return 0
-                    r → go (n - 1) $ fromIntegral $ negate (r ∷ Int)
-  where go 0 !r   = optional (PC.satisfy $ isDigitIn s) >>= \case
-                      Just _  → moreThan n
-                      Nothing → return r
-        go l !r   = optional digit >>= \case
-                      Just d1 → go (l - 1) ((r `shiftL` digitBits) + d)
-                        where !d = fromIntegral $ negate d1
-                      Nothing → return r
+npcBitsUpTo s n = (<?> systemName s ++ " digits") $ do
+                    d₀ ← digit
+                    case d₀ of
+                      0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                             case mDigit of
+                               Just _  → PC.unexpected "leading zero"
+                               Nothing → return 0
+                      r → go (n - 1) $ fromIntegral $ negate (r ∷ Int)
+  where go 0 !r   = do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                       case mDigit of
+                         Just _  → moreThan n
+                         Nothing → return r
+        go l !r   = do mDigit ← optional digit
+                       case mDigit of
+                         Just d1 → go (l - 1) ((r `shiftL` digitBits) + d)
+                           where !d = fromIntegral $ negate d1
+                         Nothing → return r
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE npcBitsUpTo ∷ (Monad μ, CharParsing μ) ⇒ Binary → Int → μ Int #-}
@@ -1284,12 +1346,13 @@ npbBits s = (<?> systemName s ++ " digits") $ do
   where q1 = minBound `shiftR` digitBits
         r  = negate (lastDigitIn s (minBound ∷ α)) .&. digitMaskIn s
         q  = if r == 0 then q1 else q1 + 1
-        go !n     = optional digit >>= \case
-                      Just d1 → if n > q || (n == q && d1 <= r)
-                                then go ((n `shiftL` digitBits) + d)
-                                else fail "out of bounds"
-                        where !d = fromIntegral $ negate d1
-                      Nothing → return n
+        go !n     = do mDigit ← optional digit
+                       case mDigit of
+                         Just d1 → if n > q || (n == q && d1 <= r)
+                                   then go ((n `shiftL` digitBits) + d)
+                                   else fail "out of bounds"
+                           where !d = fromIntegral $ negate d1
+                         Nothing → return n
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE npbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -1355,20 +1418,24 @@ npcbBits ∷ ∀ s μ α
          . (BitSystem s, Ord α, Bounded α, Num α, Bits α,
             Monad μ, CharParsing μ)
         ⇒ s → μ α
-npcbBits s = (<?> systemName s ++ " digits") $ digit >>= \case
-               0 → optional (PC.satisfy $ isDigitIn s) >>= \case
-                     Just _  → PC.unexpected "leading zero"
-                     Nothing → return 0
-               n → go $ fromIntegral $ negate (n ∷ Int)
+npcbBits s = (<?> systemName s ++ " digits") $ do
+               d₀ ← digit
+               case d₀ of
+                 0 → do mDigit ← optional (PC.satisfy $ isDigitIn s)
+                        case mDigit of
+                          Just _  → PC.unexpected "leading zero"
+                          Nothing → return 0
+                 n → go $ fromIntegral $ negate (n ∷ Int)
   where q1 = minBound `shiftR` digitBits
         r  = negate (lastDigitIn s (minBound ∷ α)) .&. digitMaskIn s
         q  = if r == 0 then q1 else q1 + 1
-        go !n     = optional digit >>= \case
-                      Just d1 → if n > q || (n == q && d1 <= r)
-                                then go ((n `shiftL` digitBits) + d)
-                                else fail "out of bounds"
-                        where !d = fromIntegral $ negate d1
-                      Nothing → return n
+        go !n     = do mDigit ← optional digit
+                       case mDigit of
+                         Just d1 → if n > q || (n == q && d1 <= r)
+                                   then go ((n `shiftL` digitBits) + d)
+                                   else fail "out of bounds"
+                           where !d = fromIntegral $ negate d1
+                         Nothing → return n
         digitBits = digitBitsIn s
         digit     = digitIn s
 {-# SPECIALIZE npcbBits ∷ (Monad μ, CharParsing μ) ⇒ Binary → μ Int #-}
@@ -1455,9 +1522,11 @@ optSign  =  (pure NonPositive <* PC.char '-')
 --   The supplied parser is used to determine the sign of the number.
 number' ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ)
         ⇒ μ Sign → s → μ α
-number' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nonNegative s
-  NonPositive → nonPositive s
+number' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nonNegative s
+    NonPositive → nonPositive s
 {-# INLINE number' #-}
 
 -- | A shorthand for 'number'' 'optMinus'.
@@ -1470,9 +1539,11 @@ number = number' optMinus
 --   Leading zeroes are not allowed.
 compact' ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ)
          ⇒ μ Sign → s → μ α
-compact' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nnCompact s
-  NonPositive → npCompact s
+compact' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nnCompact s
+    NonPositive → npCompact s
 {-# INLINE compact' #-}
 
 -- | A shorthand for 'compact'' 'optMinus'.
@@ -1485,9 +1556,11 @@ compact = compact' optMinus
 --   the number.
 numberUpTo' ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ)
             ⇒ μ Sign → s → Int → μ α
-numberUpTo' neg s n = (<?> systemName s) $ neg >>= \case
-  NonNegative → nnUpTo s n
-  NonPositive → npUpTo s n
+numberUpTo' neg s n = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nnUpTo s n
+    NonPositive → npUpTo s n
 {-# INLINE numberUpTo' #-}
 
 -- | A shorthand for 'numberUpTo'' 'optMinus'.
@@ -1501,9 +1574,11 @@ numberUpTo = numberUpTo' optMinus
 --   the number. Leading zeroes are not allowed.
 compactUpTo' ∷ (PositionalSystem s, Num α, Monad μ, CharParsing μ)
              ⇒ μ Sign → s → Int → μ α
-compactUpTo' neg s n = (<?> systemName s) $ neg >>= \case
-  NonNegative → nncUpTo s n
-  NonPositive → npcUpTo s n
+compactUpTo' neg s n = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nncUpTo s n
+    NonPositive → npcUpTo s n
 {-# INLINE compactUpTo' #-}
 
 -- | A shorthand for 'compactUpTo'' 'optMinus'.
@@ -1518,9 +1593,11 @@ compactUpTo = compactUpTo' optMinus
 bounded' ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
             Monad μ, CharParsing μ)
          ⇒ μ Sign → s → μ α
-bounded' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nnBounded s
-  NonPositive → npBounded s
+bounded' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nnBounded s
+    NonPositive → npBounded s
 {-# INLINE bounded' #-}
 
 -- | A shorthand for 'bounded'' 'optMinus'.
@@ -1535,9 +1612,11 @@ bounded = bounded' optMinus
 cBounded' ∷ (PositionalSystem s, Ord α, Bounded α, Integral α,
              Monad μ, CharParsing μ)
           ⇒ μ Sign → s → μ α
-cBounded' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nncBounded s
-  NonPositive → npcBounded s
+cBounded' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nncBounded s
+    NonPositive → npcBounded s
 {-# INLINE cBounded' #-}
 
 -- | A shorthand for 'cBounded'' 'optMinus'.
@@ -1551,9 +1630,11 @@ cBounded = cBounded' optMinus
 --   the sign of the number.
 bits' ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
       ⇒ μ Sign → s → μ α
-bits' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nnBits s
-  NonPositive → npBits s
+bits' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nnBits s
+    NonPositive → npBits s
 {-# INLINE bits' #-}
 
 -- | A shorthand for 'bits'' 'optMinus'.
@@ -1566,9 +1647,11 @@ bits = bits' optMinus
 --   the sign of the number. Leading zeroes are not allowed.
 cBits' ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
        ⇒ μ Sign → s → μ α
-cBits' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nncBits s
-  NonPositive → npcBits s
+cBits' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nncBits s
+    NonPositive → npcBits s
 {-# INLINE cBits' #-}
 
 -- | A shorthand for 'cBits'' 'optMinus'.
@@ -1581,9 +1664,11 @@ cBits = cBits' optMinus
 --   used to determine the sign of the number.
 bitsUpTo' ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
           ⇒ μ Sign → s → Int → μ α
-bitsUpTo' neg s n = (<?> systemName s) $ neg >>= \case
-  NonNegative → nnBitsUpTo s n
-  NonPositive → npBitsUpTo s n
+bitsUpTo' neg s n = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nnBitsUpTo s n
+    NonPositive → npBitsUpTo s n
 {-# INLINE bitsUpTo' #-}
 
 -- | A shorthand for 'bitsUpTo'' 'optMinus'.
@@ -1598,9 +1683,11 @@ bitsUpTo = bitsUpTo' optMinus
 --   allowed.
 cBitsUpTo' ∷ (BitSystem s, Num α, Bits α, Monad μ, CharParsing μ)
            ⇒ μ Sign → s → Int → μ α
-cBitsUpTo' neg s n = (<?> systemName s) $ neg >>= \case
-  NonNegative → nncBitsUpTo s n
-  NonPositive → npcBitsUpTo s n
+cBitsUpTo' neg s n = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nncBitsUpTo s n
+    NonPositive → npcBitsUpTo s n
 {-# INLINE cBitsUpTo' #-}
 
 -- | A shorthand for 'cBitsUpTo'' 'optMinus'.
@@ -1615,9 +1702,11 @@ cBitsUpTo = cBitsUpTo' optMinus
 bBits' ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
           Monad μ, CharParsing μ)
        ⇒ μ Sign → s → μ α
-bBits' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nnbBits s
-  NonPositive → npbBits s
+bBits' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nnbBits s
+    NonPositive → npbBits s
 {-# INLINE bBits' #-}
 
 -- | A shorthand for 'bBits'' 'optMinus'.
@@ -1634,9 +1723,11 @@ bBits = bBits' optMinus
 cbBits' ∷ (BitSystem s, Ord α, Bounded α, Num α, Bits α,
            Monad μ, CharParsing μ)
         ⇒ μ Sign → s → μ α
-cbBits' neg s = (<?> systemName s) $ neg >>= \case
-  NonNegative → nncbBits s
-  NonPositive → npcbBits s
+cbBits' neg s = (<?> systemName s) $ do
+  sign ← neg
+  case sign of
+    NonNegative → nncbBits s
+    NonPositive → npcbBits s
 {-# INLINE cbBits' #-}
 
 -- | A shorthand for 'cbBits'' 'optMinus'.
