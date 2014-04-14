@@ -95,7 +95,7 @@ import Text.Printer.Integral (
          PositionalSystem(..), BitSystem(..),
          Binary(..), Octal(..), Decimal(..), Hexadecimal(..),
          LowHex(..), UpHex(..))
-import Text.Parser.Combinators (Parsing, (<?>))
+import Text.Parser.Combinators ((<?>))
 import qualified Text.Parser.Combinators as PC
 import Text.Parser.Char (CharParsing)
 import qualified Text.Parser.Char as PC
@@ -323,12 +323,12 @@ nnBounded s = digit >>= go <?> systemName s ++ " digits"
 {-# SPECIALIZE nnBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word16 #-}
 {-# SPECIALIZE nnBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word32 #-}
 {-# SPECIALIZE nnBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word64 #-}
-{-# SPECIALIZE nnBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
-{-# SPECIALIZE nnBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
-{-# SPECIALIZE nnBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
-{-# SPECIALIZE nnBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
-{-# SPECIALIZE nnBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
-{-# SPECIALIZE nnBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
+{-# SPECIALIZE nnBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
+{-# SPECIALIZE nnBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
+{-# SPECIALIZE nnBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
+{-# SPECIALIZE nnBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
+{-# SPECIALIZE nnBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
+{-# SPECIALIZE nnBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
 
 -- | Parse a non-negative number written in the specified positional
 --   numeral system, failing on overflow. Leading zeroes are not allowed.
@@ -357,12 +357,12 @@ nncBounded s = (<?> systemName s ++ " digits") $ digit >>= \case
 {-# SPECIALIZE nncBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word16 #-}
 {-# SPECIALIZE nncBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word32 #-}
 {-# SPECIALIZE nncBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word64 #-}
-{-# SPECIALIZE nncBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
-{-# SPECIALIZE nncBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
-{-# SPECIALIZE nncBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
-{-# SPECIALIZE nncBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
-{-# SPECIALIZE nncBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
-{-# SPECIALIZE nncBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
+{-# SPECIALIZE nncBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
+{-# SPECIALIZE nncBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
+{-# SPECIALIZE nncBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
+{-# SPECIALIZE nncBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
+{-# SPECIALIZE nncBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
+{-# SPECIALIZE nncBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
 
 -- | Parse a non-negative binary number written in the specified
 --   positional numeral system.
@@ -942,12 +942,12 @@ npBounded s = (<?> systemName s ++ " digits") $ do
 {-# SPECIALIZE npBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word16 #-}
 {-# SPECIALIZE npBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word32 #-}
 {-# SPECIALIZE npBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word64 #-}
-{-# SPECIALIZE npBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
-{-# SPECIALIZE npBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
-{-# SPECIALIZE npBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
-{-# SPECIALIZE npBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
-{-# SPECIALIZE npBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
-{-# SPECIALIZE npBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
+{-# SPECIALIZE npBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
+{-# SPECIALIZE npBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
+{-# SPECIALIZE npBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
+{-# SPECIALIZE npBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
+{-# SPECIALIZE npBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
+{-# SPECIALIZE npBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
 
 -- | Parse a non-positive number written in the specified positional
 --   numeral system, failing on overflow. Leading zeroes are not allowed.
@@ -978,12 +978,12 @@ npcBounded s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
 {-# SPECIALIZE npcBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word16 #-}
 {-# SPECIALIZE npcBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word32 #-}
 {-# SPECIALIZE npcBounded ∷ (Monad μ, CharParsing μ) ⇒ Decimal → μ Word64 #-}
-{-# SPECIALIZE npcBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
-{-# SPECIALIZE npcBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
-{-# SPECIALIZE npcBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
-{-# SPECIALIZE npcBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
-{-# SPECIALIZE npcBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
-{-# SPECIALIZE npcBounded ∷ (Ord α, Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
+{-# SPECIALIZE npcBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Binary → μ α #-}
+{-# SPECIALIZE npcBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Octal → μ α #-}
+{-# SPECIALIZE npcBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Decimal → μ α #-}
+{-# SPECIALIZE npcBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ Hexadecimal → μ α #-}
+{-# SPECIALIZE npcBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ LowHex → μ α #-}
+{-# SPECIALIZE npcBounded ∷ (Bounded α, Integral α, Monad μ, CharParsing μ) ⇒ UpHex → μ α #-}
 
 -- | Parse a non-positive two\'s complement binary number written in
 --   the specified positional numeral system.
