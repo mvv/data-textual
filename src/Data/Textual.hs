@@ -68,8 +68,7 @@ import Data.Monoid (mempty)
 import Data.Int
 import Data.Word
 import Data.Ratio (Ratio)
-import Data.Fixed (Fixed, HasResolution,
-                   Uni, Centi, Deci, Milli, Micro, Nano, Pico)
+import Data.Fixed (Fixed, HasResolution)
 import Data.List (stripPrefix)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
