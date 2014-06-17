@@ -24,41 +24,6 @@ module Data.Textual
   , toLazyUtf8
   -- * Parsing
   , Textual(..)
-  -- ** Standard types proxies
-  , hintType
-  , hintType1
-  , hintTypeArg
-  , aUnit
-  , aChar
-  , anInteger
-  , anInt
-  , anInt8
-  , anInt16
-  , anInt32
-  , anInt64
-  , aWord
-  , aWord8
-  , aWord16
-  , aWord32
-  , aWord64
-  , aRatio
-  , aRatioOf
-  , aRational
-  , aFixed
-  , aFixedOf
-  , aUni
-  , aDeci
-  , aCenti
-  , aMilli
-  , aMicro
-  , aNano
-  , aPico
-  , aFloat
-  , aDouble
-  , aMaybe
-  , aMaybeOf
-  , aList
-  , aListOf
   -- ** Built-in parser
   , Parsed(..)
   , isParsed
@@ -97,7 +62,6 @@ module Data.Textual
 
 import Prelude hiding (print)
 import Data.Typeable (Typeable)
-import Data.Proxy (Proxy(..))
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import Data.Monoid (mempty)
@@ -308,147 +272,6 @@ instance HasResolution α ⇒ Textual (Fixed α) where
   textual = fractional
   {-# INLINE textual #-}
 
--- | Hint the type system about the type of the first argument.
-hintType ∷ α → Proxy α → α
-hintType a _ = a
-{-# INLINE hintType #-}
-
--- | Hint the type system about the type constructor.
-hintType1 ∷ f α → Proxy f → f α
-hintType1 f _ = f
-{-# INLINE hintType1 #-}
-
--- | Hint the type system about the type argument. 
-hintTypeArg ∷ f α → Proxy α → f α
-hintTypeArg f _ = f
-{-# INLINE hintTypeArg #-}
-
-infixl 1 `hintType`, `hintType1`, `hintTypeArg`
-
--- | /()/ proxy value.
-aUnit ∷ Proxy ()
-aUnit = Proxy
-
--- | 'Char' proxy value.
-aChar ∷ Proxy Char
-aChar = Proxy
-
--- | 'Integer' proxy value.
-anInteger ∷ Proxy Integer
-anInteger = Proxy
-
--- | 'Int' proxy value.
-anInt ∷ Proxy Int
-anInt = Proxy
-
--- | 'Int8' proxy value.
-anInt8 ∷ Proxy Int8
-anInt8 = Proxy
-
--- | 'Int16' proxy value.
-anInt16 ∷ Proxy Int16
-anInt16 = Proxy
-
--- | 'Int32' proxy value.
-anInt32 ∷ Proxy Int32
-anInt32 = Proxy
-
--- | 'Int64' proxy value.
-anInt64 ∷ Proxy Int64
-anInt64 = Proxy
-
--- | 'Word' proxy value.
-aWord ∷ Proxy Word
-aWord = Proxy
-
--- | 'Word8' proxy value.
-aWord8 ∷ Proxy Word8
-aWord8 = Proxy
-
--- | 'Word16' proxy value.
-aWord16 ∷ Proxy Word16
-aWord16 = Proxy
-
--- | 'Word32' proxy value.
-aWord32 ∷ Proxy Word32
-aWord32 = Proxy
-
--- | 'Word64' proxy value.
-aWord64 ∷ Proxy Word64
-aWord64 = Proxy
-
--- | 'Ratio' proxy value.
-aRatio ∷ Proxy Ratio
-aRatio = Proxy
-
--- | 'Ratio' /α/ proxy value.
-aRatioOf ∷ Proxy α → Proxy (Ratio α)
-aRatioOf _ = Proxy
-
--- | 'Rational' proxy value.
-aRational ∷ Proxy Rational
-aRational = Proxy
-
--- | 'Fixed' proxy value.
-aFixed ∷ Proxy Fixed
-aFixed = Proxy
-
--- | 'Fixed' /α/ proxy value.
-aFixedOf ∷ Proxy α → Proxy (Fixed α)
-aFixedOf _ = Proxy
-
--- | 'Uni' proxy value.
-aUni ∷ Proxy Uni
-aUni = Proxy
-
--- | 'Deci' proxy value.
-aDeci ∷ Proxy Deci
-aDeci = Proxy
-
--- | 'Centi' proxy value.
-aCenti ∷ Proxy Centi
-aCenti = Proxy
-
--- | 'Milli' proxy value.
-aMilli ∷ Proxy Milli
-aMilli = Proxy
-
--- | 'Micro' proxy value.
-aMicro ∷ Proxy Micro
-aMicro = Proxy
-
--- | 'Nano' proxy value.
-aNano ∷ Proxy Nano
-aNano = Proxy
-
--- | 'Pico' proxy value.
-aPico ∷ Proxy Pico
-aPico = Proxy
-
--- | 'Float' proxy value.
-aFloat ∷ Proxy Float
-aFloat = Proxy
-
--- | 'Double' proxy value.
-aDouble ∷ Proxy Double
-aDouble = Proxy
-
--- | 'Maybe' proxy value.
-aMaybe ∷ Proxy Maybe
-aMaybe = Proxy
-
--- | 'Maybe' /α/ proxy value.
-aMaybeOf ∷ Proxy α → Proxy (Maybe α)
-aMaybeOf _ = Proxy
-
--- | List proxy value.
-aList ∷ Proxy []
-aList = Proxy
-
--- | List of /α/ proxy value.
-aListOf ∷ Proxy α → Proxy ([α])
-aListOf _ = Proxy
-
 -- | Parsing result.
 data Parsed α = Parsed α
               | Malformed [String] String
@@ -592,7 +415,7 @@ parseString = parse $ textual <* PC.eof
 {-# INLINE parseString #-}
 
 -- | Provide a hint for the type system when using 'parseString'.
-parseStringAs ∷ Textual α ⇒ Proxy α → String → Parsed α
+parseStringAs ∷ Textual α ⇒ p α → String → Parsed α
 parseStringAs _ = parseString
 {-# INLINE parseStringAs #-}
 
@@ -602,7 +425,7 @@ parseText = parseString . TS.unpack
 {-# INLINE parseText #-}
 
 -- | Provide a hint for the type system when using 'parseText'.
-parseTextAs ∷ Textual α ⇒ Proxy α → TS.Text → Parsed α
+parseTextAs ∷ Textual α ⇒ p α → TS.Text → Parsed α
 parseTextAs _ = parseText
 {-# INLINE parseTextAs #-}
 
@@ -612,7 +435,7 @@ parseLazyText = parseString . TL.unpack
 {-# INLINE parseLazyText #-}
 
 -- | Provide a hint for the type system when using 'parseLazyText'.
-parseLazyTextAs ∷ Textual α ⇒ Proxy α → TL.Text → Parsed α
+parseLazyTextAs ∷ Textual α ⇒ p α → TL.Text → Parsed α
 parseLazyTextAs _ = parseLazyText
 {-# INLINE parseLazyTextAs #-}
 
@@ -622,7 +445,7 @@ parseAscii = parseString . BS8.unpack
 {-# INLINE parseAscii #-}
 
 -- | Provide a hint for the type system when using 'parseAscii'.
-parseAsciiAs ∷ Textual α ⇒ Proxy α → BS.ByteString → Parsed α
+parseAsciiAs ∷ Textual α ⇒ p α → BS.ByteString → Parsed α
 parseAsciiAs _ = parseAscii
 {-# INLINE parseAsciiAs #-}
 
@@ -643,7 +466,7 @@ parseUtf8 = parseLazyText . decodeUtf8 . BL.fromStrict
 {-# INLINE parseUtf8 #-}
 
 -- | Provide a hint for the type system when using 'parseUtf8'.
-parseUtf8As ∷ Textual α ⇒ Proxy α → BS.ByteString → Parsed α
+parseUtf8As ∷ Textual α ⇒ p α → BS.ByteString → Parsed α
 parseUtf8As _ = parseUtf8
 {-# INLINE parseUtf8As #-}
 
@@ -654,7 +477,7 @@ parseLazyUtf8 = parseLazyText . decodeUtf8
 {-# INLINE parseLazyUtf8 #-}
 
 -- | Provide a hint for the type system when using 'parseLazyUtf8'.
-parseLazyUtf8As ∷ Textual α ⇒ Proxy α → BL.ByteString → Parsed α
+parseLazyUtf8As ∷ Textual α ⇒ p α → BL.ByteString → Parsed α
 parseLazyUtf8As _ = parseLazyUtf8
 {-# INLINE parseLazyUtf8As #-}
 
@@ -664,7 +487,7 @@ fromString = maybeParsed . parseString
 {-# INLINE fromString #-}
 
 -- | Provide a hint for the type system when using 'fromString'.
-fromStringAs ∷ Textual α ⇒ Proxy α → String → Maybe α
+fromStringAs ∷ Textual α ⇒ p α → String → Maybe α
 fromStringAs _ = fromString
 {-# INLINE fromStringAs #-}
 
@@ -674,7 +497,7 @@ fromText = maybeParsed . parseText
 {-# INLINE fromText #-}
 
 -- | Provide a hint for the type system when using 'fromText'.
-fromTextAs ∷ Textual α ⇒ Proxy α → TS.Text → Maybe α
+fromTextAs ∷ Textual α ⇒ p α → TS.Text → Maybe α
 fromTextAs _ = fromText
 {-# INLINE fromTextAs #-}
 
@@ -684,7 +507,7 @@ fromLazyText = maybeParsed . parseLazyText
 {-# INLINE fromLazyText #-}
 
 -- | Provide a hint for the type system when using 'fromLazyText'.
-fromLazyTextAs ∷ Textual α ⇒ Proxy α → TL.Text → Maybe α
+fromLazyTextAs ∷ Textual α ⇒ p α → TL.Text → Maybe α
 fromLazyTextAs _ = fromLazyText
 {-# INLINE fromLazyTextAs #-}
 
@@ -694,7 +517,7 @@ fromAscii = maybeParsed . parseAscii
 {-# INLINE fromAscii #-}
 
 -- | Provide a hint for the type system when using 'fromAscii'.
-fromAsciiAs ∷ Textual α ⇒ Proxy α → BS.ByteString → Maybe α
+fromAsciiAs ∷ Textual α ⇒ p α → BS.ByteString → Maybe α
 fromAsciiAs _ = fromAscii
 {-# INLINE fromAsciiAs #-}
 
@@ -704,7 +527,7 @@ fromLazyAscii = maybeParsed . parseLazyAscii
 {-# INLINE fromLazyAscii #-}
 
 -- | Provide a hint for the type system when using 'fromLazyAscii'.
-fromLazyAsciiAs ∷ Textual α ⇒ Proxy α → BL.ByteString → Maybe α
+fromLazyAsciiAs ∷ Textual α ⇒ p α → BL.ByteString → Maybe α
 fromLazyAsciiAs _ = fromLazyAscii
 {-# INLINE fromLazyAsciiAs #-}
 
@@ -714,7 +537,7 @@ fromUtf8 = maybeParsed . parseUtf8
 {-# INLINE fromUtf8 #-}
 
 -- | Provide a hint for the type system when using 'fromUtf8'.
-fromUtf8As ∷ Textual α ⇒ Proxy α → BS.ByteString → Maybe α
+fromUtf8As ∷ Textual α ⇒ p α → BS.ByteString → Maybe α
 fromUtf8As _ = fromUtf8
 {-# INLINE fromUtf8As #-}
 
@@ -724,7 +547,7 @@ fromLazyUtf8 = maybeParsed . parseLazyUtf8
 {-# INLINE fromLazyUtf8 #-}
 
 -- | Provide a hint for the type system when using 'fromLazyUtf8'.
-fromLazyUtf8As ∷ Textual α ⇒ Proxy α → BL.ByteString → Maybe α
+fromLazyUtf8As ∷ Textual α ⇒ p α → BL.ByteString → Maybe α
 fromLazyUtf8As _ = fromLazyUtf8
 {-# INLINE fromLazyUtf8As #-}
 

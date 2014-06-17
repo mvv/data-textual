@@ -10,7 +10,7 @@ import Test.QuickCheck ((==>))
 import Prelude hiding (print)
 import Data.Word (Word)
 import Data.Fixed (Pico)
-import Data.Proxy (Proxy)
+import Type.Hint
 import Control.Applicative
 import Text.Printer (StringBuilder)
 import qualified Text.Printer as TP
@@ -297,7 +297,7 @@ main = defaultMain
 parse ∷ (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → StringBuilder → Parsed α
 parse p b = builtInParser (p <* PC.eof) (TP.buildString b)
 
-parseAs ∷ Proxy α → (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → StringBuilder
+parseAs ∷ p α → (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → StringBuilder
         → Parsed α
 parseAs _ = parse
 

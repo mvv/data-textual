@@ -29,7 +29,6 @@ Library
     base >= 4 && < 5,
     bytestring >= 0.10,
     text,
-    tagged >= 0.2,
     text-latin1 >= 0.3,
     text-printer >= 0.4,
     parsers >= 0.5
@@ -49,7 +48,7 @@ Test-Suite tests
     test-framework-quickcheck2 >= 0.2,
     QuickCheck                 >= 2.4,
     text-printer,
-    tagged,
+    type-hint >= 0.1,
     parsers,
     data-textual
   Hs-Source-Dirs: tests
