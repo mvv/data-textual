@@ -176,30 +176,37 @@ maybePrint = maybe mempty print
 -- | A shorthand for @'TP.buildString' . 'print'@.
 toString ∷ Printable α ⇒ α → String
 toString = TP.buildString . print
+{-# INLINE[1] toString #-}
 
 -- | A shorthand for @'TP.buildText' . 'print'@.
 toText ∷ Printable α ⇒ α → TS.Text
 toText = TP.buildText . print
+{-# INLINE[1] toText #-}
 
 -- | A shorthand for @'TP.buildLazyText' . 'print'@.
 toLazyText ∷ Printable α ⇒ α → TL.Text
 toLazyText = TP.buildLazyText . print
+{-# INLINE[1] toLazyText #-}
 
 -- | A shorthand for @'TP.buildAscii' . 'print'@.
 toAscii ∷ Printable α ⇒ α → BS.ByteString
 toAscii = TP.buildAscii . print
+{-# INLINE[1] toAscii #-}
 
 -- | A shorthand for @'TP.buildLazyAscii' . 'print'@.
 toLazyAscii ∷ Printable α ⇒ α → BL.ByteString
 toLazyAscii = TP.buildLazyAscii . print
+{-# INLINE[1] toLazyAscii #-}
 
 -- | A shorthand for @'TP.buildUtf8' . 'print'@.
 toUtf8 ∷ Printable α ⇒ α → BS.ByteString
 toUtf8 = TP.buildUtf8 . print
+{-# INLINE[1] toUtf8 #-}
 
 -- | A shorthand for @'TP.buildLazyUtf8' . 'print'@.
 toLazyUtf8 ∷ Printable α ⇒ α → BL.ByteString
 toLazyUtf8 = TP.buildLazyUtf8 . print
+{-# INLINE[1] toLazyUtf8 #-}
 
 -- | The default parser for values of a type, must satisfy
 --   @
