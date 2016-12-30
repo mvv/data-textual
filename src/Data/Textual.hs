@@ -549,4 +549,3 @@ fromLazyUtf8 = maybeParsed . parseLazyUtf8
 fromLazyUtf8As ∷ Textual α ⇒ p α → BL.ByteString → Maybe α
 fromLazyUtf8As _ = fromLazyUtf8
 {-# INLINE fromLazyUtf8As #-}
-
