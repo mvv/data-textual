@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TupleSections #-}
@@ -37,6 +38,9 @@ module Data.Textual.Fractional
 import Data.Maybe (isJust)
 import Data.Ratio ((%))
 import Control.Applicative
+#if !MIN_VERSION_base(4, 13, 0)
+import Control.Monad.Fail (MonadFail)
+#endif
 import Text.Printer.Fractional (Optional(..), isOptional, isRequired)
 import Text.Parser.Combinators ((<?>), unexpected)
 import Text.Parser.Char (CharParsing)
@@ -44,12 +48,12 @@ import qualified Text.Parser.Char as PC
 import Data.Textual.Integral
 
 -- | Accept a slash and return 'Required'. Otherwise return 'Optional'.
-optSlash ∷ (Monad μ, CharParsing μ) ⇒ μ Optional
+optSlash ∷ (MonadFail μ, CharParsing μ) ⇒ μ Optional
 optSlash = maybe Optional (const Required) <$> optional (PC.char '/')
 
 -- | Parse a fraction. The numerator and the denominator are expected to be
 --   written in the specified positional numeral system.
-fraction' ∷ (PositionalSystem s, Fractional α, Monad μ, CharParsing μ)
+fraction' ∷ (PositionalSystem s, Fractional α, MonadFail μ, CharParsing μ)
           ⇒ μ Sign -- ^ Sign parser
           → s
           → μ Optional -- ^ Numerator/denominator separator parser
@@ -67,25 +71,25 @@ fraction' neg s den = (<?> "fraction") $ do
       return $ fromRational $ n % d
 
 -- | A shorthand for 'fraction'' 'optMinus' 'Decimal' 'optSlash'.
-fraction ∷ (Fractional α, Monad μ, CharParsing μ) ⇒ μ α
+fraction ∷ (Fractional α, MonadFail μ, CharParsing μ) ⇒ μ α
 fraction = fraction' optMinus Decimal optSlash
 
 -- | Start of a decimal exponent. Accepts /'e'/ or /'E'/ followed by
 --   an optional sign. Otherwise 'Nothing' is returned.
-decExpSign ∷ (Monad μ, CharParsing μ) ⇒ μ (Maybe Sign)
+decExpSign ∷ (MonadFail μ, CharParsing μ) ⇒ μ (Maybe Sign)
 decExpSign = optional (PC.oneOf "eE") >>= \case
                Nothing → return Nothing
                Just _  → Just <$> optSign
 
 -- | Start of a hexadecimal exponent. Accepts /'p'/ or /'P'/ followed by
 --   an optional sign. Otherwise 'Nothing' is returned.
-hexExpSign ∷ (Monad μ, CharParsing μ) ⇒ μ (Maybe Sign)
+hexExpSign ∷ (MonadFail μ, CharParsing μ) ⇒ μ (Maybe Sign)
 hexExpSign = optional (PC.oneOf "pP") >>= \case
                Nothing → return Nothing
                Just _  → Just <$> optSign
 
 -- | /s/-fraction parser.
-fractional' ∷ (PositionalSystem s, Fractional α, Monad μ, CharParsing μ)
+fractional' ∷ (PositionalSystem s, Fractional α, MonadFail μ, CharParsing μ)
             ⇒ μ Sign -- ^ Sign parser.
             → s
             → Optional -- ^ Whether the integer part is optional.
@@ -133,6 +137,6 @@ fractional' neg s ip dot eneg = (<?> (systemName s ++ "-fraction")) $ do
     digit = digitIn s
 
 -- | Decimal fraction parser.
-fractional ∷ (Monad μ, Fractional α, CharParsing μ) ⇒ μ α
+fractional ∷ (MonadFail μ, Fractional α, CharParsing μ) ⇒ μ α
 fractional = fractional' optMinus Decimal Required
                          (PC.char '.' *> pure ()) decExpSign

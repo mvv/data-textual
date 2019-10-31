@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -60,11 +61,13 @@ module Data.Textual
   , fromLazyUtf8As
   ) where
 
-import Prelude hiding (print)
+import Prelude hiding (fail, print)
 import Data.Typeable (Typeable)
+#if !MIN_VERSION_base(4, 13, 0)
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import Data.Monoid (mempty)
+#endif
 import Data.Int
 import Data.Word
 import Data.Ratio (Ratio)
@@ -80,6 +83,7 @@ import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Textual.Integral
 import Data.Textual.Fractional
 import Control.Applicative
+import Control.Monad.Fail (MonadFail (fail))
 import qualified Text.Printer as TP
 import qualified Text.Printer.Integral as TP
 import qualified Text.Printer.Fractional as TP
@@ -213,7 +217,7 @@ toLazyUtf8 = TP.buildLazyUtf8 . print
 --     'fromString' ('toString' /x/) = 'Just' /x/
 --   @
 class Printable α ⇒ Textual α where
-  textual ∷ (Monad μ, CharParsing μ) ⇒ μ α
+  textual ∷ (MonadFail μ, CharParsing μ) ⇒ μ α
 
 instance Textual Char where
   textual = PC.anyChar
@@ -395,6 +399,8 @@ instance Monad Parser where
   {-# INLINE (>>=) #-}
   (>>) = (*>)
   {-# INLINE (>>) #-}
+
+instance MonadFail Parser where
   fail = PC.unexpected
   {-# INLINE fail #-}
 
