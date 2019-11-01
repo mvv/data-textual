@@ -11,7 +11,7 @@ import Prelude hiding (print)
 import Data.Word (Word)
 import Data.Fixed (Pico)
 import Type.Hint
-import Control.Applicative
+import Control.Monad.Fail (MonadFail)
 import Text.Printer (StringBuilder)
 import qualified Text.Printer as TP
 import qualified Text.Printer.Integral as TP
@@ -294,10 +294,10 @@ main = defaultMain
         parse fractional (print i) == Parsed (i ∷ Double)
   ]
 
-parse ∷ (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → StringBuilder → Parsed α
+parse ∷ (∀ μ . (MonadFail μ, CharParsing μ) ⇒ μ α) → StringBuilder → Parsed α
 parse p b = builtInParser (p <* PC.eof) (TP.buildString b)
 
-parseAs ∷ p α → (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → StringBuilder
+parseAs ∷ p α → (∀ μ . (MonadFail μ, CharParsing μ) ⇒ μ α) → StringBuilder
         → Parsed α
 parseAs _ = parse
 

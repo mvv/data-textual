@@ -410,7 +410,7 @@ parse p i = runParser p [] 0 i (\_  _ _ a → Parsed a)
 {-# INLINE parse #-}
 
 -- | Use the built-in parser to parse a string. Intended for testing only.
-builtInParser ∷ (∀ μ . (Monad μ, CharParsing μ) ⇒ μ α) → String → Parsed α
+builtInParser ∷ (∀ μ . (MonadFail μ, CharParsing μ) ⇒ μ α) → String → Parsed α
 builtInParser p = parse p
 {-# INLINE builtInParser #-}
 
