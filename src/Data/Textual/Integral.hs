@@ -309,7 +309,7 @@ nnBounded s = digit >>= go <?> systemName s ++ " digits"
         go !n  = optional digit >>= \case
                    Just n1 → if n < q || (n == q && n1 <= r)
                              then go (n * radix + n1)
-                             else fail "out of bounds"
+                             else PC.unexpected "out of bounds"
                    Nothing → return n
         radix  = radixIn s
         digit  = digitIn s
@@ -343,7 +343,7 @@ nncBounded s = (<?> systemName s ++ " digits") $ digit >>= \case
         go !n  = optional digit >>= \case
                    Just d  → if n < q || (n == q && d <= r)
                              then go (n * radix + d)
-                             else fail "out of bounds"
+                             else PC.unexpected "out of bounds"
                    Nothing → return n
         radix  = radixIn s
         digit  = digitIn s
@@ -654,7 +654,7 @@ nnbBits s = digit >>= go <?> systemName s ++ " digits"
         go !n = optional digit >>= \case
                   Just d  → if n < q || (n == q && d <= r)
                             then go ((n `shiftL` digitBits) .|. d)
-                            else fail "out of bounds"
+                            else PC.unexpected "out of bounds"
                   Nothing → return n
         digitBits = digitBitsIn s
         digit     = digitIn s
@@ -730,7 +730,7 @@ nncbBits s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
         go !n = optional digit >>= \case
                   Just d  → if n < q || (n == q && d <= r)
                             then go ((n `shiftL` digitBits) .|. d)
-                            else fail "out of bounds"
+                            else PC.unexpected "out of bounds"
                   Nothing → return n
         digitBits = digitBitsIn s
         digit     = digitIn s
@@ -928,7 +928,7 @@ npBounded s = (<?> systemName s ++ " digits") $ do
         go !n   = optional digit >>= \case
                     Just d  → if n > q || (n == q && d <= r)
                               then go (n * radix - d)
-                              else fail "out of bounds"
+                              else PC.unexpected "out of bounds"
                     Nothing → return n
         radix   = radixIn s
         digit   = digitIn s
@@ -964,7 +964,7 @@ npcBounded s = (<?> systemName s ++ " digits") $ digitIn s >>= \case
         go !n   = optional digit >>= \case
                     Just d  → if n > q || (n == q && d <= r)
                               then go (n * radix - d)
-                              else fail "out of bounds"
+                              else PC.unexpected "out of bounds"
                     Nothing → return n
         radix   = radixIn s
         digit   = digitIn s
@@ -1287,7 +1287,7 @@ npbBits s = (<?> systemName s ++ " digits") $ do
         go !n     = optional digit >>= \case
                       Just d1 → if n > q || (n == q && d1 <= r)
                                 then go ((n `shiftL` digitBits) + d)
-                                else fail "out of bounds"
+                                else PC.unexpected "out of bounds"
                         where !d = fromIntegral $ negate d1
                       Nothing → return n
         digitBits = digitBitsIn s
@@ -1366,7 +1366,7 @@ npcbBits s = (<?> systemName s ++ " digits") $ digit >>= \case
         go !n     = optional digit >>= \case
                       Just d1 → if n > q || (n == q && d1 <= r)
                                 then go ((n `shiftL` digitBits) + d)
-                                else fail "out of bounds"
+                                else PC.unexpected "out of bounds"
                         where !d = fromIntegral $ negate d1
                       Nothing → return n
         digitBits = digitBitsIn s

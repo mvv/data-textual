@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -395,8 +396,10 @@ instance Monad Parser where
   {-# INLINE (>>=) #-}
   (>>) = (*>)
   {-# INLINE (>>) #-}
+#if !MIN_VERSION_base(4,13,0)
   fail = PC.unexpected
   {-# INLINE fail #-}
+#endif
 
 parse ∷ Parser α → String → Parsed α
 parse p i = runParser p [] 0 i (\_  _ _ a → Parsed a)
