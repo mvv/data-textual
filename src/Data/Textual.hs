@@ -63,9 +63,11 @@ module Data.Textual
 
 import Prelude hiding (print)
 import Data.Typeable (Typeable)
+#if !MIN_VERSION_base(4,13,0)
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import Data.Monoid (mempty)
+#endif
 import Data.Int
 import Data.Word
 import Data.Ratio (Ratio)
