@@ -8,10 +8,8 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck ((==>))
 
 import Prelude hiding (print)
-import Data.Word (Word)
 import Data.Fixed (Pico)
 import Type.Hint
-import Control.Applicative
 import Text.Printer (StringBuilder)
 import qualified Text.Printer as TP
 import qualified Text.Printer.Integral as TP
