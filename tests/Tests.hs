@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UnicodeSyntax #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
@@ -8,10 +9,14 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck ((==>))
 
 import Prelude hiding (print)
+#if !MIN_VERSION_base(4,8,0)
 import Data.Word (Word)
+#endif
 import Data.Fixed (Pico)
 import Type.Hint
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative
+#endif
 import Text.Printer (StringBuilder)
 import qualified Text.Printer as TP
 import qualified Text.Printer.Integral as TP
